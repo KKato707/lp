@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="ja" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- ================================================================
+       ★【変更】ページタイトル・説明文（会社名が決まったら差し替え）
+       ================================================================ -->
+  <title>株式会社XXX｜富士市の外壁・屋根塗装</title>
+  <meta name="description" content="富士市の外壁・屋根塗装。完全自社施工で適正価格。個人情報不要のかんたん概算シミュレーターで、その場で費用の目安がわかります。" />
+
+  <!-- Tailwind CSS（CDN） -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink:    '#1c2430', // 文字・濃色
+            accent: '#2f5d7c', // アクセント（富士の空をイメージした深い青）
+            mist:   '#f5f6f4', // 薄いグレー背景
+            line:   '#06c755'  // LINE公式カラー
+          },
+          fontFamily: {
+            sans:  ['"Noto Sans JP"', 'sans-serif'],
+            serif: ['"Shippori Mincho"', 'serif']
+          },
+          letterSpacing: { widest2: '.3em' }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Shippori+Mincho:wght@500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ================================================================
+       ★【変更】背景画像の設定（ここだけ変えればOK）
+       ----------------------------------------------------------------
+       --hero-image  : トップ画面（ファーストビュー）の画像
+       --fixed-image : 2セクション目以降の「固定背景」の画像
+
+       現在は仮画像として「大淵笹場（富士市）の茶畑と富士山」
+       （Wikimedia Commons / 撮影: SHori / CC BY 4.0）を使用しています。
+       ※CC BY 4.0 のため、使用中はクレジット表記（Hero右下）が必要です。
+
+       backimage1.png を同じフォルダに置いたら、例えば次のように変更：
+         --fixed-image: url('backimage1.png');
+         --hero-image : url('backimage1.png');   ← トップにも使う場合
+       ※ fixed-image は「backimage1.png → 無ければ仮画像」の順で
+         読み込むよう既に設定済みなので、置くだけでも反映されます。
+       ================================================================ */
+    :root {
+      --temp-image: url('https://images.unsplash.com/photo-1562259949-e8e7689d7828?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=85&w=2400');
+      --hero-image: var(--temp-image);
+      --fixed-image: url('backimage1.png'), var(--temp-image);
+    }
+
+    body { font-feature-settings: "palt"; -webkit-font-smoothing: antialiased; }
+
+    /* トップ画面の背景（スクロールで普通に流れる） */
+    .hero-bg {
+      background-image: linear-gradient(180deg, rgba(20,28,38,.45) 0%, rgba(20,28,38,.25) 45%, rgba(20,28,38,.65) 100%), var(--hero-image);
+      background-size: cover;
+      background-position: center 35%;
+    }
+
+    /* 2セクション目以降の固定背景（iPhoneでも動くよう position:fixed のレイヤー方式） */
+    #fixed-bg {
+      background-image: var(--fixed-image);
+      background-size: cover;
+      background-position: center;
+    }
+
+    /* スクロールで要素がふわっと出る演出 */
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity .9s ease, transform .9s ease; }
+    .reveal.is-visible { opacity: 1; transform: none; }
+
+    /* シミュレーターの選択肢（ラジオボタンをカード化） */
+    .opt input { position: absolute; opacity: 0; pointer-events: none; }
+    .opt span {
+      display: flex; align-items: center; justify-content: center; text-align: center;
+      min-height: 3.5rem; padding: .75rem 1rem; border: 1px solid #dfe3e6; border-radius: .75rem;
+      background: #fff; cursor: pointer; transition: all .25s ease; font-size: .95rem; line-height: 1.4;
+    }
+    .opt span:hover { border-color: #2f5d7c; }
+    .opt input:checked + span { border-color: #2f5d7c; background: #2f5d7c; color: #fff; box-shadow: 0 8px 24px -10px rgba(47,93,124,.6); }
+    .opt input:focus-visible + span { outline: 2px solid #2f5d7c; outline-offset: 2px; }
+
+    /* 結果表示アニメーション */
+    #sim-result { transition: max-height .8s ease, opacity .8s ease; max-height: 0; opacity: 0; overflow: hidden; }
+    #sim-result.show { max-height: 800px; opacity: 1; }
+
+    /* ヘッダー：スクロールで白背景に */
+    #site-header.scrolled { background: rgba(255,255,255,.92); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(0,0,0,.06); }
+    #site-header.scrolled .h-light { color: #1c2430; }
+
+    @keyframes scrollHint { 0%{transform:translateY(0);opacity:0} 40%{opacity:1} 100%{transform:translateY(14px);opacity:0} }
+    .scroll-hint { animation: scrollHint 2s ease-in-out infinite; }
+  </style>
+</head>
+
+<body class="font-sans text-ink bg-white pb-16 md:pb-0">
+
+  <!-- 2セクション目以降で見える固定背景レイヤー -->
+  <div id="fixed-bg" class="fixed inset-0 -z-10" aria-hidden="true"></div>
+
+  <!-- ================================================================
+       ヘッダー
+       ================================================================ -->
+  <header id="site-header" class="fixed top-0 inset-x-0 z-40 transition-all duration-500">
+    <div class="max-w-6xl mx-auto px-5 md:px-8 h-16 md:h-20 flex items-center justify-between">
+      <!-- ★【変更】ロゴ：画像ロゴにする場合は下の <span> を
+           <img src="logo.png" alt="株式会社XXX" class="h-8 md:h-10"> に置き換え -->
+      <a href="#top" class="h-light text-white transition-colors">
+        <span class="font-serif text-lg md:text-xl tracking-wider">株式会社<span class="opacity-70">XXX</span></span>
+      </a>
+      <nav class="hidden md:flex items-center gap-8 text-sm h-light text-white transition-colors">
+        <a href="#reasons" class="hover:opacity-60 transition">当社の特徴</a>
+        <a href="#simulator" class="hover:opacity-60 transition">概算シミュレーター</a>
+        <a href="#works" class="hover:opacity-60 transition">施工実績</a>
+        <a href="#company" class="hover:opacity-60 transition">会社概要</a>
+        <a href="#contact" class="px-5 py-2.5 rounded-full bg-accent text-white hover:bg-ink transition">お問い合わせ</a>
+      </nav>
+      <!-- スマホ：電話アイコン -->
+      <a href="#" data-tel class="md:hidden h-light text-white p-2" aria-label="電話で問い合わせ">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.28 6.72 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.37c0-.52-.35-.97-.85-1.09l-4.42-1.1c-.44-.12-.9.05-1.17.41l-.97 1.29a1.13 1.13 0 01-1.21.38 12.04 12.04 0 01-7.14-7.14 1.13 1.13 0 01.38-1.21l1.29-.97c.36-.27.53-.73.41-1.17l-1.1-4.42A1.13 1.13 0 005.62 2.25H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg>
+      </a>
+    </div>
+  </header>
+
+  <!-- ================================================================
+       1. HERO（ファーストビュー）※ここだけ背景は固定しない
+       ================================================================ -->
+  <section id="top" class="hero-bg relative min-h-[100svh] flex items-center text-white">
+    <div class="max-w-6xl mx-auto px-6 md:px-8 w-full pt-20">
+      <p class="reveal text-xs md:text-sm tracking-widest2 opacity-90 mb-6">FUJI CITY ／ EXTERIOR PAINTING</p>
+      <!-- ★【変更】キャッチコピー -->
+      <h1 class="reveal font-serif text-[2rem] leading-[1.5] md:text-6xl md:leading-[1.35] mb-6">
+        大切な住まいに、<br />まっすぐな価格と<br class="md:hidden" />確かな仕上がりを。
+      </h1>
+      <p class="reveal text-sm md:text-base leading-loose opacity-90 mb-10 max-w-xl">
+        完全自社施工だから、中間マージンゼロ。<br />
+        富士市の外壁・屋根塗装は、地元の職人へ。
+      </p>
+      <div class="reveal flex flex-col sm:flex-row gap-4">
+        <a href="#simulator" class="group inline-flex items-center justify-center gap-3 px-8 py-4 rounded-full bg-white text-ink hover:bg-accent hover:text-white transition">
+          <span class="font-medium">30秒で概算をチェック</span>
+          <svg class="w-4 h-4 group-hover:translate-y-0.5 transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        </a>
+        <span class="self-center text-xs opacity-80">※お名前・電話番号などの入力は不要です</span>
+      </div>
+    </div>
+
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center text-[10px] tracking-widest2 opacity-80">
+      SCROLL<span class="mt-2 block w-px h-8 bg-white/40 relative overflow-hidden"><span class="scroll-hint absolute top-0 left-0 w-px h-3 bg-white"></span></span>
+    </div>
+
+    <!-- 背景写真：Unsplashの無料ライセンス画像。自社写真に差し替えたら削除してOK -->
+    <p class="absolute bottom-2 right-3 text-[10px] opacity-60">
+      Photo: <a class="underline" href="https://unsplash.com/photos/Cl-OpYWFFm0" target="_blank" rel="noopener">Theme Photos / Unsplash</a>
+    </p>
+  </section>
+
+  <main>
+    <!-- ================================================================
+         2. 当社の特徴
+         ================================================================ -->
+    <section id="reasons" class="bg-white py-24 md:py-36">
+      <div class="max-w-6xl mx-auto px-6 md:px-8">
+        <div class="reveal text-center mb-16 md:mb-20">
+          <p class="text-xs tracking-widest2 text-accent mb-4">FEATURES</p>
+          <h2 class="font-serif text-2xl md:text-4xl">当社の特徴</h2>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-6 md:gap-8">
+          <!-- ★【変更】強み①〜③ -->
+          <article class="reveal group p-8 md:p-10 rounded-2xl bg-mist hover:bg-white hover:shadow-[0_20px_50px_-20px_rgba(28,36,48,.25)] transition duration-500">
+            <p class="font-serif text-4xl text-accent/30 mb-6">01</p>
+            <h3 class="text-lg font-medium mb-3">完全自社施工</h3>
+            <p class="text-sm leading-relaxed text-ink/70">下請けに出さないから、中間マージンゼロ。同じ品質を、適正価格で。</p>
+          </article>
+          <article class="reveal group p-8 md:p-10 rounded-2xl bg-mist hover:bg-white hover:shadow-[0_20px_50px_-20px_rgba(28,36,48,.25)] transition duration-500" style="transition-delay:.1s">
+            <p class="font-serif text-4xl text-accent/30 mb-6">02</p>
+            <h3 class="text-lg font-medium mb-3">見える、明快な見積もり</h3>
+            <p class="text-sm leading-relaxed text-ink/70">「一式」でごまかさない内訳。大手の見積もりとの比較も歓迎です。</p>
+          </article>
+          <article class="reveal group p-8 md:p-10 rounded-2xl bg-mist hover:bg-white hover:shadow-[0_20px_50px_-20px_rgba(28,36,48,.25)] transition duration-500" style="transition-delay:.2s">
+            <p class="font-serif text-4xl text-accent/30 mb-6">03</p>
+            <h3 class="text-lg font-medium mb-3">地元ならではの安心</h3>
+            <p class="text-sm leading-relaxed text-ink/70">富士市内ならすぐ駆けつけます。施工後の点検・保証も自社で対応。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- 固定背景が見える「窓」（パララックス帯） -->
+    <div class="relative h-[45vh] md:h-[60vh] flex items-center justify-center">
+      <div class="absolute inset-0 bg-ink/30"></div>
+      <p class="reveal relative font-serif text-white text-xl md:text-3xl tracking-wider text-center leading-loose drop-shadow">
+        この街の景色に、<br class="md:hidden" />長く馴染む家を。
+      </p>
+    </div>
+
+    <!-- ================================================================
+         3. かんたん概算シミュレーター
+         ================================================================ -->
+    <section id="simulator" class="bg-mist py-24 md:py-36">
+      <div class="max-w-3xl mx-auto px-6 md:px-8">
+        <div class="reveal text-center mb-14">
+          <p class="text-xs tracking-widest2 text-accent mb-4">SIMULATOR</p>
+          <h2 class="font-serif text-2xl md:text-4xl mb-5">登録不要・かんたん概算</h2>
+          <p class="text-sm text-ink/70">3つ選ぶだけ。個人情報の入力は一切ありません。</p>
+        </div>
+
+        <form id="sim-form" class="reveal bg-white rounded-3xl p-6 md:p-12 shadow-[0_30px_80px_-40px_rgba(28,36,48,.35)]" novalidate>
+          <!-- Step 1 -->
+          <fieldset class="mb-10">
+            <legend class="flex items-center gap-3 mb-4 text-sm font-medium">
+              <span class="w-7 h-7 rounded-full bg-accent text-white text-xs flex items-center justify-center">1</span>工事範囲
+            </legend>
+            <div class="grid grid-cols-3 gap-3">
+              <label class="opt"><input type="radio" name="scope" value="both" checked /><span>外壁＋屋根</span></label>
+              <label class="opt"><input type="radio" name="scope" value="wall" /><span>外壁のみ</span></label>
+              <label class="opt"><input type="radio" name="scope" value="roof" /><span>屋根のみ</span></label>
+            </div>
+          </fieldset>
+
+          <!-- Step 2 -->
+          <fieldset class="mb-10">
+            <legend class="flex items-center gap-3 mb-4 text-sm font-medium">
+              <span class="w-7 h-7 rounded-full bg-accent text-white text-xs flex items-center justify-center">2</span>おおよその延床面積
+            </legend>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <label class="opt"><input type="radio" name="area" value="s" /><span>〜20坪</span></label>
+              <label class="opt"><input type="radio" name="area" value="m" checked /><span>21〜30坪</span></label>
+              <label class="opt"><input type="radio" name="area" value="l" /><span>31〜40坪</span></label>
+              <label class="opt"><input type="radio" name="area" value="xl" /><span>41坪〜</span></label>
+            </div>
+            <p class="mt-3 text-xs text-ink/50">一般的な2階建て住宅は30〜40坪前後が目安です。</p>
+          </fieldset>
+
+          <!-- Step 3 -->
+          <fieldset class="mb-12">
+            <legend class="flex items-center gap-3 mb-4 text-sm font-medium">
+              <span class="w-7 h-7 rounded-full bg-accent text-white text-xs flex items-center justify-center">3</span>塗料のご希望
+            </legend>
+            <div class="grid grid-cols-3 gap-3">
+              <label class="opt"><input type="radio" name="grade" value="standard" /><span>スタンダード</span></label>
+              <label class="opt"><input type="radio" name="grade" value="long" checked /><span>長持ち・高耐久</span></label>
+              <label class="opt"><input type="radio" name="grade" value="premium" /><span>最上級</span></label>
+            </div>
+          </fieldset>
+
+          <button type="submit" class="w-full py-5 rounded-full bg-ink text-white tracking-wider hover:bg-accent transition">
+            概算を見る
+          </button>
+
+          <!-- 結果（アニメーション表示） -->
+          <div id="sim-result" aria-live="polite">
+            <div class="mt-10 pt-10 border-t border-ink/10 text-center">
+              <p class="text-xs tracking-widest2 text-accent mb-3">ESTIMATE</p>
+              <p id="sim-summary" class="text-sm text-ink/60 mb-4"></p>
+              <p class="font-serif text-ink">
+                <span id="sim-min" class="text-4xl md:text-6xl">0</span><span class="text-lg md:text-xl ml-1">万円</span>
+                <span class="mx-2 md:mx-4 text-ink/40">〜</span>
+                <span id="sim-max" class="text-4xl md:text-6xl">0</span><span class="text-lg md:text-xl ml-1">万円</span>
+              </p>
+              <p class="mt-3 text-xs text-ink/60">（足場代・保証込み／税込目安）</p>
+              <p class="mt-2 text-[11px] text-ink/40">※建物の形状・劣化状況により変動します。正式なお見積りは無料の現地調査後にご提示します。</p>
+
+              <!-- 問い合わせ導線 -->
+              <div class="mt-8 grid sm:grid-cols-3 gap-3">
+                <a href="#" id="cta-line" target="_blank" rel="noopener" class="flex items-center justify-center gap-2 py-4 rounded-full bg-line text-white text-sm hover:opacity-90 transition">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.48 3 2 6.58 2 11c0 3.95 3.55 7.26 8.35 7.89.33.07.77.22.88.5.1.25.07.65.03.9l-.14.85c-.04.25-.2.98.86.53 1.06-.45 5.73-3.37 7.82-5.78C21.24 14.3 22 12.74 22 11c0-4.42-4.48-8-10-8z"/></svg>
+                  LINEでこの結果を相談
+                </a>
+                <a href="#" id="cta-mail" class="flex items-center justify-center gap-2 py-4 rounded-full border border-ink/20 text-sm hover:border-accent hover:text-accent transition">
+                  メールで問い合わせ
+                </a>
+                <a href="#" data-tel class="flex items-center justify-center gap-2 py-4 rounded-full border border-ink/20 text-sm hover:border-accent hover:text-accent transition">
+                  電話で問い合わせ
+                </a>
+              </div>
+              <p id="copy-note" class="mt-3 text-[11px] text-ink/40 hidden">結果をコピーしました。LINEのトークに貼り付けてお送りください。</p>
+            </div>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         4. 施工実績（ビフォーアフター）※note連携予定
+         ----------------------------------------------------------------
+         【note記事の連携方法】ページ下部のスクリプト内の NOTE_ARTICLES に
+         記事を追加するだけでカードが自動生成されます。
+
+         ■ 方法A（おすすめ・簡単）：手動で配列に追記
+           { title:'記事タイトル', url:'https://note.com/ユーザー名/n/nXXXX',
+             image:'サムネイル画像URL', tag:'外壁＋屋根', place:'富士市◯◯町' }
+           ※サムネイル画像URLは note 記事を開き、画像を右クリック
+             →「画像アドレスをコピー」で取得できます。
+
+         ■ 方法B：note公式の埋め込みを使う
+           note記事の「…」メニュー →「埋め込み」で取得したコード
+           （<iframe class="note-embed" ...> と <script ...embed.js>）を
+           下の id="works-embed" の div に貼り付けてください。
+
+         ■ 方法C（自動更新）：noteのRSS（https://note.com/ユーザー名/rss）を
+           サーバー側(PHP等)で取得してJSONで返す仕組みが必要です。
+           ブラウザから直接RSSを読むとCORS制限で失敗するため、
+           自動化したい場合は別途ご相談ください。
+         ================================================================ -->
+    <section id="works" class="bg-white py-24 md:py-36">
+      <div class="max-w-6xl mx-auto px-6 md:px-8">
+        <div class="reveal flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-14">
+          <div>
+            <p class="text-xs tracking-widest2 text-accent mb-4">WORKS</p>
+            <h2 class="font-serif text-2xl md:text-4xl">施工実績</h2>
+          </div>
+          <!-- ★【変更】noteのアカウントURL -->
+          <a href="https://note.com/" target="_blank" rel="noopener" class="text-sm text-ink/60 hover:text-accent transition">
+            すべての事例を note で見る →
+          </a>
+        </div>
+
+        <!-- 方法A：JSで自動生成されるカード -->
+        <div id="works-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8"></div>
+
+        <!-- 方法B：note埋め込みコードはここに貼り付け -->
+        <div id="works-embed" class="mt-10 grid md:grid-cols-2 gap-6"></div>
+      </div>
+    </section>
+
+    <!-- 固定背景が見える「窓」その2 -->
+    <div class="relative h-[35vh] md:h-[50vh]">
+      <div class="absolute inset-0 bg-white/10"></div>
+    </div>
+
+    <!-- ================================================================
+         5. 会社概要 & 代表紹介
+         ================================================================ -->
+    <section id="company" class="bg-mist py-24 md:py-36">
+      <div class="max-w-6xl mx-auto px-6 md:px-8">
+        <div class="reveal text-center mb-16">
+          <p class="text-xs tracking-widest2 text-accent mb-4">COMPANY</p>
+          <h2 class="font-serif text-2xl md:text-4xl">代表あいさつ・会社概要</h2>
+        </div>
+
+        <div class="grid md:grid-cols-5 gap-10 md:gap-16 items-start">
+          <!-- 代表写真 -->
+          <div class="reveal md:col-span-2">
+            <!-- ★【変更】代表写真：下の div を
+                 <img src="president.jpg" alt="代表 ◯◯ ◯◯" class="w-full aspect-[4/5] object-cover rounded-2xl">
+                 に置き換えてください -->
+            <div class="w-full aspect-[4/5] rounded-2xl bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center text-ink/40 text-sm">
+              代表写真（president.jpg）
+            </div>
+          </div>
+
+          <div class="md:col-span-3">
+            <div class="reveal mb-12">
+              <!-- ★【変更】代表メッセージ・氏名 -->
+              <p class="font-serif text-xl md:text-2xl leading-relaxed mb-6">
+                「この家を任せてよかった」<br />そう言っていただける仕事を。
+              </p>
+              <p class="text-sm leading-loose text-ink/70 mb-6">
+                塗装は、10年先の暮らしを守る仕事です。見えない下地処理まで手を抜かず、ご説明はわかりやすく正直に。富士市で育った職人として、地域の住まいに責任を持ちます。
+              </p>
+              <p class="text-sm">代表 / 一級塗装技能士　<span class="font-serif text-lg ml-1">◯◯ ◯◯</span></p>
+            </div>
+
+            <!-- ★【変更】会社基本情報 -->
+            <dl class="reveal grid grid-cols-[7rem_1fr] text-sm border-t border-ink/10">
+              <dt class="py-4 border-b border-ink/10 text-ink/50">会社名</dt>
+              <dd class="py-4 border-b border-ink/10" data-company>株式会社 XXX</dd>
+              <dt class="py-4 border-b border-ink/10 text-ink/50">所在地</dt>
+              <dd class="py-4 border-b border-ink/10">静岡県富士市◯◯町 0-0-0</dd>
+              <dt class="py-4 border-b border-ink/10 text-ink/50">対応エリア</dt>
+              <dd class="py-4 border-b border-ink/10">富士市・富士宮市・沼津市 ほか近隣</dd>
+              <dt class="py-4 border-b border-ink/10 text-ink/50">事業内容</dt>
+              <dd class="py-4 border-b border-ink/10">外壁塗装・屋根塗装・防水工事</dd>
+              <dt class="py-4 border-b border-ink/10 text-ink/50">許可・資格</dt>
+              <dd class="py-4 border-b border-ink/10">静岡県知事許可（般-00）第00000号 ほか</dd>
+              <dt class="py-4 border-b border-ink/10 text-ink/50">電話</dt>
+              <dd class="py-4 border-b border-ink/10"><a href="#" data-tel data-tel-text class="hover:text-accent">000-000-0000</a></dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         6. お問い合わせ（Webフォーム）
+         ※送信には同じフォルダの contact.php が必要（PHPが動くサーバー）。
+           PHPが使えない環境では自動的にメールソフト起動に切り替わります。
+         ================================================================ -->
+    <section id="contact" class="bg-ink text-white py-24 md:py-32">
+      <div class="max-w-3xl mx-auto px-6 md:px-8">
+        <div class="reveal text-center mb-12">
+          <p class="text-xs tracking-widest2 text-white/60 mb-4">CONTACT</p>
+          <h2 class="font-serif text-2xl md:text-4xl mb-5">無料診断・お見積り</h2>
+        </div>
+
+        <div class="reveal rounded-2xl border border-white/30 px-6 py-4 text-center mb-6">
+          <p class="font-medium">メールでのご相談はこちら</p>
+          <p class="mt-1 text-xs text-white/60">下記フォームにご入力のうえ、送信してください。</p>
+        </div>
+
+        <form id="contact-form" class="reveal space-y-5" novalidate>
+          <!-- スパム対策（人間には見えない項目。触らないでください） -->
+          <input type="text" name="website" class="hidden" tabindex="-1" autocomplete="off" />
+          <input type="hidden" name="estimate" id="estimate-field" />
+
+          <div class="grid sm:grid-cols-2 gap-5">
+            <label class="block">
+              <span class="text-xs text-white/70">お名前 <span class="text-amber-300">*</span></span>
+              <input name="name" required class="mt-2 w-full bg-transparent border-b border-white/30 py-3 focus:outline-none focus:border-white" />
+            </label>
+            <label class="block">
+              <span class="text-xs text-white/70">電話番号 または メール <span class="text-amber-300">*</span></span>
+              <input name="contact" required class="mt-2 w-full bg-transparent border-b border-white/30 py-3 focus:outline-none focus:border-white" />
+            </label>
+          </div>
+          <label class="block">
+            <span class="text-xs text-white/70">ご相談内容</span>
+            <textarea name="message" rows="4" class="mt-2 w-full bg-transparent border-b border-white/30 py-3 focus:outline-none focus:border-white resize-none" placeholder="例）築15年。他社の見積もりが妥当か見てほしい"></textarea>
+          </label>
+          <p id="estimate-preview" class="hidden text-xs text-white/60"></p>
+          <button type="submit" class="w-full py-5 rounded-full bg-white text-ink tracking-wider hover:bg-accent hover:text-white transition">送信する</button>
+          <p id="form-msg" class="text-center text-sm min-h-[1.5rem]" aria-live="polite"></p>
+        </form>
+        <div class="reveal grid sm:grid-cols-2 gap-3 mt-6">
+          <a href="#" data-tel class="flex flex-col items-center justify-center py-3 rounded-full border border-white/30 hover:bg-white hover:text-ink transition">
+            <span class="text-lg tracking-wider" data-tel-text>000-000-0000</span>
+            <span class="text-[11px] opacity-70" data-hours>受付 8:00〜18:00（日曜定休）</span>
+          </a>
+          <a href="#" data-line class="flex items-center justify-center gap-2 py-5 rounded-full bg-line text-white hover:opacity-90 transition">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.48 3 2 6.58 2 11c0 3.95 3.55 7.26 8.35 7.89.33.07.77.22.88.5.1.25.07.65.03.9l-.14.85c-.04.25-.2.98.86.53 1.06-.45 5.73-3.37 7.82-5.78C21.24 14.3 22 12.74 22 11c0-4.42-4.48-8-10-8z"/></svg>
+            LINEで相談する
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- フッター -->
+  <footer class="bg-[#141a23] text-white/50 text-xs py-10 text-center">
+    <p class="font-serif text-white/80 text-base mb-2" data-company>株式会社 XXX</p>
+    <p>静岡県富士市◯◯町 0-0-0</p>
+    <p class="mt-6">&copy; <span id="year"></span> <span data-company>株式会社 XXX</span></p>
+  </footer>
+
+  <!-- スマホ用：画面下の固定お問い合わせバー -->
+  <div class="md:hidden fixed bottom-0 inset-x-0 z-50 grid grid-cols-3 text-[11px] bg-white/95 backdrop-blur border-t border-ink/10">
+    <a href="#" data-line class="flex flex-col items-center justify-center py-2.5 text-line">
+      <svg class="w-5 h-5 mb-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.48 3 2 6.58 2 11c0 3.95 3.55 7.26 8.35 7.89.33.07.77.22.88.5.1.25.07.65.03.9l-.14.85c-.04.25-.2.98.86.53 1.06-.45 5.73-3.37 7.82-5.78C21.24 14.3 22 12.74 22 11c0-4.42-4.48-8-10-8z"/></svg>LINE
+    </a>
+    <a href="#" data-tel class="flex flex-col items-center justify-center py-2.5 text-ink border-x border-ink/10">
+      <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.28 6.72 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.37c0-.52-.35-.97-.85-1.09l-4.42-1.1c-.44-.12-.9.05-1.17.41l-.97 1.29a1.13 1.13 0 01-1.21.38 12.04 12.04 0 01-7.14-7.14 1.13 1.13 0 01.38-1.21l1.29-.97c.36-.27.53-.73.41-1.17l-1.1-4.42A1.13 1.13 0 005.62 2.25H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg>電話
+    </a>
+    <a href="#simulator" class="flex flex-col items-center justify-center py-2.5 bg-accent text-white">
+      <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V13.5zm0 2.25h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V18zm2.498-6.75h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V13.5zm0 2.25h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V18zm2.504-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zm0 2.25h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V18zm2.498-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zM8.25 6h7.5v2.25h-7.5V6zM12 2.25c-1.89 0-3.73.12-5.53.35C5.39 2.73 4.5 3.69 4.5 4.84V19.5a2.25 2.25 0 002.25 2.25h10.5a2.25 2.25 0 002.25-2.25V4.84c0-1.15-.89-2.11-1.97-2.24A42.5 42.5 0 0012 2.25z"/></svg>概算を見る
+    </a>
+  </div>
+
+  <script>
+    /* ==================================================================
+       ★【変更】連絡先などの基本設定 —— ここを書き換えるだけで
+         ページ内のすべての電話・メール・LINEボタンに反映されます
+       ================================================================== */
+    const CONFIG = {
+      companyName: '株式会社 XXX',            // 会社名（data-company の箇所に反映）
+      tel:         '000-000-0000',                // 電話番号（表示用。ハイフン可）
+      email:       'info@example.com',            // 問い合わせ先メールアドレス
+      hours:       '受付 8:00〜18:00（日曜定休）',
+      // LINE公式アカウントのID（@から始まるもの）。設定すると相談文が自動入力された状態でLINEが開きます
+      lineId:      '@xxxxxxx',
+      // LINE友だち追加URL（LINE Official Account Manager で取得。例：https://lin.ee/XXXXXXX）
+      lineUrl:     'https://lin.ee/XXXXXXX',
+      // Webフォームの送信先（同じフォルダの contact.php）
+      formEndpoint: 'contact.php'
+    };
+
+    /* ==================================================================
+       ★【変更】概算シミュレーターの計算ロジック（ダミー数値）
+       ------------------------------------------------------------------
+       概算(万円) = 代表坪数 × (外壁単価 + 屋根単価 + 足場単価) + 保証などの固定費
+       下限 = 概算 × RANGE.low ／ 上限 = 概算 × RANGE.high（5万円単位で丸め）
+       単価はすべて「1坪あたりの万円」です。実際の価格表に合わせて変更してください。
+       ================================================================== */
+    const PRICING = {
+      area: { s: 20, m: 28, l: 36, xl: 45 },           // 各選択肢の代表坪数
+      wallUnit:  { standard: 2.2, long: 2.8, premium: 3.6 }, // 外壁 1坪あたり
+      roofUnit:  { standard: 0.9, long: 1.2, premium: 1.6 }, // 屋根 1坪あたり
+      scaffoldUnit: { both: 0.6, wall: 0.6, roof: 0.4 },     // 足場 1坪あたり
+      fixedCost: 5,                                          // 保証・諸経費（万円）
+      range: { low: 0.9, high: 1.1 },                        // 幅
+      roundTo: 5                                             // 丸め単位（万円）
+    };
+
+    const LABELS = {
+      scope: { both: '外壁＋屋根', wall: '外壁のみ', roof: '屋根のみ' },
+      area:  { s: '〜20坪', m: '21〜30坪', l: '31〜40坪', xl: '41坪〜' },
+      grade: { standard: 'スタンダード', long: '長持ち・高耐久', premium: '最上級' }
+    };
+
+    /* ==================================================================
+       ★【変更】施工実績（note記事）—— 記事を追加するとカードが増えます
+       image が空の場合はグレーのプレースホルダーを表示します
+       ================================================================== */
+    const NOTE_ARTICLES = [
+      { title: '築15年・窯業系サイディングの外壁塗装', url: 'https://note.com/', image: '', tag: '外壁＋屋根', place: '富士市◯◯町' },
+      { title: '色あせたスレート屋根を高耐久塗料で再生',   url: 'https://note.com/', image: '', tag: '屋根のみ',   place: '富士市◯◯' },
+      { title: '大手見積もりから約30％ダウンできた事例',   url: 'https://note.com/', image: '', tag: '外壁のみ',   place: '富士宮市◯◯' }
+    ];
+
+    /* ------------------------------------------------------------------
+       以下は基本的に変更不要
+       ------------------------------------------------------------------ */
+    let lastEstimateText = '';
+
+    // 連絡先の反映
+    const telHref = 'tel:' + CONFIG.tel.replace(/[^0-9+]/g, '');
+    document.querySelectorAll('[data-tel]').forEach(a => a.href = telHref);
+    document.querySelectorAll('[data-tel-text]').forEach(el => el.textContent = CONFIG.tel);
+    document.querySelectorAll('[data-hours]').forEach(el => el.textContent = CONFIG.hours);
+    document.querySelectorAll('[data-company]').forEach(el => el.textContent = CONFIG.companyName);
+    document.querySelectorAll('[data-line]').forEach(a => { a.href = CONFIG.lineUrl; a.target = '_blank'; a.rel = 'noopener'; });
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // ヘッダーの背景切り替え
+    const header = document.getElementById('site-header');
+    const onScroll = () => header.classList.toggle('scrolled', window.scrollY > window.innerHeight * 0.6);
+    window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+
+    // スクロール出現アニメーション
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target); } });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+    // ---------- シミュレーター ----------
+    function calcEstimate(scope, area, grade) {
+      const tsubo = PRICING.area[area];
+      const wall  = scope !== 'roof' ? PRICING.wallUnit[grade] : 0;
+      const roof  = scope !== 'wall' ? PRICING.roofUnit[grade] : 0;
+      const base  = tsubo * (wall + roof + PRICING.scaffoldUnit[scope]) + PRICING.fixedCost;
+      const r = PRICING.roundTo;
+      return {
+        min: Math.max(r, Math.floor(base * PRICING.range.low / r) * r),
+        max: Math.ceil(base * PRICING.range.high / r) * r
+      };
+    }
+
+    function countUp(el, to, duration = 1200) {
+      const start = performance.now();
+      const step = now => {
+        const p = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(to * eased).toLocaleString();
+        if (p < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+
+    document.getElementById('sim-form').addEventListener('submit', e => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const scope = fd.get('scope'), area = fd.get('area'), grade = fd.get('grade');
+      const { min, max } = calcEstimate(scope, area, grade);
+
+      const summary = `${LABELS.scope[scope]} ／ ${LABELS.area[area]} ／ ${LABELS.grade[grade]}`;
+      document.getElementById('sim-summary').textContent = summary;
+      lastEstimateText = `【概算シミュレーター結果】\n${summary}\n${min}万円〜${max}万円（足場代・保証込み）`;
+
+      const result = document.getElementById('sim-result');
+      result.classList.remove('show'); void result.offsetWidth; result.classList.add('show');
+      countUp(document.getElementById('sim-min'), min);
+      countUp(document.getElementById('sim-max'), max);
+
+      // LINE：公式アカウントIDがあれば相談文を自動入力して開く
+      const msg = lastEstimateText + '\nこの内容で相談したいです。';
+      const lineBtn = document.getElementById('cta-line');
+      lineBtn.href = CONFIG.lineId && !CONFIG.lineId.includes('xxx')
+        ? `https://line.me/R/oaMessage/${encodeURIComponent(CONFIG.lineId)}/?${encodeURIComponent(msg)}`
+        : CONFIG.lineUrl;
+
+      // メール：件名・本文に結果を入れて開く
+      document.getElementById('cta-mail').href =
+        `mailto:${CONFIG.email}?subject=${encodeURIComponent('塗装のご相談（概算シミュレーター）')}&body=${encodeURIComponent(msg + '\n\nお名前：\nご住所（町名まで）：\n')}`;
+
+      // お問い合わせフォームにも結果を引き継ぐ
+      document.getElementById('estimate-field').value = lastEstimateText;
+      const pv = document.getElementById('estimate-preview');
+      pv.textContent = '概算結果を添えて送信されます：' + summary + `（${min}〜${max}万円）`;
+      pv.classList.remove('hidden');
+
+      setTimeout(() => result.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
+    });
+
+    // LINEボタン押下時、結果をクリップボードにコピー（ID未設定時の補助）
+    document.getElementById('cta-line').addEventListener('click', () => {
+      if (!lastEstimateText || !navigator.clipboard) return;
+      navigator.clipboard.writeText(lastEstimateText).then(() => {
+        document.getElementById('copy-note').classList.remove('hidden');
+      }).catch(() => {});
+    });
+
+    // ---------- 施工実績カード生成 ----------
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    document.getElementById('works-grid').innerHTML = NOTE_ARTICLES.map((a, i) => `
+      <a href="${esc(a.url)}" target="_blank" rel="noopener" class="reveal group block" style="transition-delay:${i * 0.1}s">
+        <div class="aspect-[4/3] rounded-2xl overflow-hidden bg-mist mb-5 relative">
+          ${a.image
+            ? `<img src="${esc(a.image)}" alt="${esc(a.title)}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition duration-700">`
+            : `<div class="w-full h-full grid grid-cols-2">
+                 <div class="flex items-end p-3 bg-slate-300/70 text-[10px] tracking-widest2 text-ink/50">BEFORE</div>
+                 <div class="flex items-end p-3 bg-slate-100 text-[10px] tracking-widest2 text-ink/50">AFTER</div>
+               </div>`}
+          <span class="absolute top-3 left-3 text-[11px] px-3 py-1 rounded-full bg-white/90">${esc(a.tag)}</span>
+        </div>
+        <p class="text-xs text-ink/50 mb-1">${esc(a.place)}</p>
+        <h3 class="text-sm leading-relaxed group-hover:text-accent transition">${esc(a.title)}</h3>
+      </a>`).join('');
+    document.querySelectorAll('#works-grid .reveal').forEach(el => io.observe(el));
+
+    // ---------- お問い合わせフォーム送信 ----------
+    document.getElementById('contact-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const form = e.target, msgEl = document.getElementById('form-msg');
+      const fd = new FormData(form);
+      if (!fd.get('name').trim() || !fd.get('contact').trim()) {
+        msgEl.textContent = 'お名前と連絡先をご入力ください。'; return;
+      }
+      msgEl.textContent = '送信中…';
+      try {
+        const res = await fetch(CONFIG.formEndpoint, { method: 'POST', body: fd });
+        const json = await res.json();
+        if (!json.ok) throw new Error(json.error || 'error');
+        msgEl.textContent = '送信しました。担当より折り返しご連絡いたします。';
+        form.reset();
+      } catch (err) {
+        // PHPが使えない環境（ローカル確認など）ではメールソフトで送信
+        const body = `お名前：${fd.get('name')}\n連絡先：${fd.get('contact')}\n\n${fd.get('message')}\n\n${fd.get('estimate') || ''}`;
+        location.href = `mailto:${CONFIG.email}?subject=${encodeURIComponent('塗装のご相談（Webフォーム）')}&body=${encodeURIComponent(body)}`;
+        msgEl.textContent = 'メールソフトを起動しました。そのまま送信してください。';
+      }
+    });
+  </script>
+</body>
+</html>
